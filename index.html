@@ -379,7 +379,7 @@
         .risk-view-item span { color: white; font-weight: 500; }
         /* Export Dropdown Styles */
         .export-dropdown { position: relative; display: inline-block; }
-        .export-dropdown-content { display: none; position: absolute; right: 0; top: 100%; margin-top: 0.5rem; background: #1e293b; border: 1px solid #475569; border-radius: 12px; min-width: 220px; z-index: 1000; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .export-dropdown-content { display: none; position: absolute; right: 0; bottom: calc(100% + 0.5rem); top: auto; background: #1e293b; border: 1px solid #475569; border-radius: 12px; min-width: 220px; z-index: 9999; overflow: hidden; box-shadow: 0 -10px 25px rgba(0,0,0,0.3); }
         .export-dropdown-content.show { display: block; }
         .export-dropdown-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; color: #e2e8f0; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; border: none; background: transparent; width: 100%; text-align: left; }
         .export-dropdown-item:hover { background: rgba(20, 184, 166, 0.2); }
@@ -396,7 +396,7 @@
         .pdf-loading-progress { color: #94a3b8; font-size: 0.875rem; }
         /* Data Management Dropdown Styles */
         .data-dropdown { position: relative; display: inline-block; }
-        .data-dropdown-content { display: none; position: absolute; right: 0; top: 100%; margin-top: 0.5rem; background: #1e293b; border: 1px solid #475569; border-radius: 12px; min-width: 240px; z-index: 1000; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .data-dropdown-content { display: none; position: absolute; right: 0; bottom: calc(100% + 0.5rem); top: auto; background: #1e293b; border: 1px solid #475569; border-radius: 12px; min-width: 240px; z-index: 9999; overflow: hidden; box-shadow: 0 -10px 25px rgba(0,0,0,0.3); }
         .data-dropdown-content.show { display: block; }
         .data-dropdown-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; color: #e2e8f0; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; border: none; background: transparent; width: 100%; text-align: left; }
         .data-dropdown-item:hover { background: rgba(20, 184, 166, 0.2); }
@@ -2192,7 +2192,7 @@ body, .header, .card, .stat-card, .nav-tabs, .nav-tab, .btn, .project-select,
                         <button class="btn btn-secondary" onclick="toggleSyncDropdown()" id="headerSyncBtn" style="background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="headerSyncIcon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                             <span id="headerSyncLabel">Google Sheets</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="syncChevron" style="transition:transform 0.2s"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                         </button>
                         <div class="data-dropdown-content" id="syncDropdown" style="min-width:280px;">
                             <div class="data-dropdown-header">Google Sheets Sync</div>
@@ -2214,7 +2214,7 @@ body, .header, .card, .stat-card, .nav-tabs, .nav-tab, .btn, .project-select,
                         <button class="btn btn-primary" onclick="toggleExportDropdown()">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             Export
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="exportChevron" style="transition:transform 0.2s"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
                         </button>
                         <div class="export-dropdown-content" id="exportDropdown">
                             <div class="export-dropdown-header">PDF Reports</div>
@@ -3966,8 +3966,10 @@ function toggleSyncDropdown() {
     var dataDD = document.getElementById('dataDropdown');
     var exportDD = document.getElementById('exportDropdown');
     if (dataDD) dataDD.classList.remove('show');
-    if (exportDD) exportDD.classList.remove('show');
-    dd.classList.toggle('show');
+    if (exportDD) { exportDD.classList.remove('show'); var ec = document.getElementById('exportChevron'); if(ec) ec.style.transform='rotate(0deg)'; }
+    var isOpen = dd.classList.toggle('show');
+    var chevron = document.getElementById('syncChevron');
+    if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
     // Update status info
     var info = document.getElementById('syncStatusInfo');
     if (info) {
@@ -3984,6 +3986,8 @@ document.addEventListener('click', function(e) {
     var wrap = document.getElementById('syncDropdownWrap');
     if (dd && wrap && !wrap.contains(e.target)) {
         dd.classList.remove('show');
+        var chevron = document.getElementById('syncChevron');
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
     }
 });
 
@@ -6785,7 +6789,14 @@ function afterProjectSave(proj) {
         
         function toggleExportDropdown() {
             const dropdown = document.getElementById('exportDropdown');
-            dropdown.classList.toggle('show');
+            const syncDD = document.getElementById('syncDropdown');
+            const dataDD = document.getElementById('dataDropdown');
+            // Close sibling dropdowns first
+            if (syncDD) { syncDD.classList.remove('show'); var sc = document.getElementById('syncChevron'); if(sc) sc.style.transform='rotate(0deg)'; }
+            if (dataDD) dataDD.classList.remove('show');
+            const isOpen = dropdown.classList.toggle('show');
+            const chevron = document.getElementById('exportChevron');
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
             
             // Close dropdown when clicking outside
             setTimeout(() => {
@@ -6798,6 +6809,8 @@ function afterProjectSave(proj) {
             const button = e?.target?.closest('.export-dropdown');
             if (!button) {
                 dropdown.classList.remove('show');
+                const chevron = document.getElementById('exportChevron');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
                 document.removeEventListener('click', closeExportDropdown);
             }
         }
@@ -7762,9 +7775,11 @@ function afterProjectSave(proj) {
         function toggleDataDropdown() {
             const dropdown = document.getElementById('dataDropdown');
             const exportDropdown = document.getElementById('exportDropdown');
+            const syncDropdown = document.getElementById('syncDropdown');
             
-            // Close export dropdown if open
+            // Close other dropdowns if open
             if (exportDropdown) exportDropdown.classList.remove('show');
+            if (syncDropdown) syncDropdown.classList.remove('show');
             
             dropdown.classList.toggle('show');
         }
