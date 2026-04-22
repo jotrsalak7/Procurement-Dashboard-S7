@@ -868,13 +868,36 @@ mark.ds6-hl{background:var(--goldlt);color:var(--ink);padding:0 1px;
 /* DS6 Maximize/Minimize */
 #schedule.ds6-maximized {
   position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
-  z-index:900;background:#F5F4F0;margin:0!important;padding:0!important;
+  z-index:9000;background:#F5F4F0;margin:0!important;padding:0!important;
   overflow:hidden;border-radius:0!important;
 }
 #schedule.ds6-maximized .stats-grid{display:none!important}
 #schedule.ds6-maximized #ds6-layout{height:calc(100vh - 52px)!important;min-height:0!important}
 #schedule.ds6-maximized #ds6-tb{border-radius:0!important}
 #schedule.ds6-maximized .ds6-wrap{border-radius:0!important;border:none!important}
+/* When schedule is maximized, hide the app chrome so DS6 truly owns the viewport.
+   Targets every common header / banner / sticky-helper that could overlap.
+   Two selector flavors: modern :has() + class-on-body fallback (set by JS). */
+body:has(#schedule.ds6-maximized) > header,
+body:has(#schedule.ds6-maximized) .header,
+body:has(#schedule.ds6-maximized) > .header,
+body:has(#schedule.ds6-maximized) .view-only-banner,
+body:has(#schedule.ds6-maximized) #pkgStickyHeader,
+body.ds6-max-on > header,
+body.ds6-max-on .header,
+body.ds6-max-on > .header,
+body.ds6-max-on .view-only-banner,
+body.ds6-max-on #pkgStickyHeader { display:none !important; }
+/* Lock the page itself so background scroll doesn't peek through. */
+body:has(#schedule.ds6-maximized),
+body.ds6-max-on { overflow:hidden!important }
+/* Neutralise the parent .main-content stacking context that would otherwise
+   trap the fixed #schedule below sibling layers (see line ~2151 z-index:2). */
+body:has(#schedule.ds6-maximized) .main-content,
+body.ds6-max-on .main-content {
+  z-index:auto!important;position:static!important;
+  padding:0!important;max-width:none!important;margin:0!important;
+}
 .ds6-maxbtn{
   padding:4px 8px;border:1px solid #555;background:transparent;color:#aaa;
   font-size:16px;cursor:pointer;border-radius:3px;transition:all .15s;
@@ -10330,11 +10353,13 @@ window.ds6_toggleMax = function(){
   ds6_isMax = !ds6_isMax;
   if(ds6_isMax){
     el.classList.add('ds6-maximized');
+    document.body.classList.add('ds6-max-on'); // fallback for browsers without :has()
     btn.innerHTML = '&#x229F;';
     btn.title = 'Minimize';
     document.body.style.overflow = 'hidden';
   } else {
     el.classList.remove('ds6-maximized');
+    document.body.classList.remove('ds6-max-on');
     btn.innerHTML = '&#x26F6;';
     btn.title = 'Maximize';
     document.body.style.overflow = '';
