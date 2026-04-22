@@ -2173,6 +2173,64 @@ body > div[style*="background:linear-gradient(90deg,rgba(20,184,166,0.15)"] {
 /* Main content sits below the header's stacking layer. */
 .main-content { z-index: 2 !important; }
 
+/* ── 1b. OVERLAY / MODAL Z-INDEX FIX ─────────────────────────────────────────
+   Same root cause as the dropdown fix above: .header was lifted to z-index:500
+   to win over .main-content, but that meant fixed-position overlays inside
+   .main-content (which gets z-index:2 from its own stacking context) were
+   clipped under the header. Overlays must always own the entire viewport.
+
+   Strategy:
+   1. Bump every known overlay/modal type to z-index >= 5000 (well above
+      the header's 500 and the dropdown's 2000).
+   2. While ANY overlay is active, neutralise .main-content's and .header's
+      stacking contexts so the fixed overlay paints over everything, AND lock
+      body scroll so the page doesn't drift while a modal is open.
+   3. Two selector flavors per rule: modern :has() (Chrome 105+ / Safari 15.4+
+      / Firefox 121+) and a body.modal-open class fallback toggled by JS. */
+.modal-overlay,
+.modal-overlay.active,
+.inline-edit-overlay,
+.inline-edit-overlay.active,
+.modal-bg,
+.modal-bg.show,
+.pdf-loading-overlay,
+.pdf-loading-overlay.show {
+  z-index: 5000 !important;
+}
+/* PDF loader is the highest-priority blocking state — keep it above modals. */
+.pdf-loading-overlay,
+.pdf-loading-overlay.show { z-index: 6000 !important; }
+
+/* Neutralise stacking contexts of header + main-content while any overlay is
+   visible, so the fixed overlay (which lives inside one of them) escapes. */
+body:has(.modal-overlay.active),
+body:has(.inline-edit-overlay.active),
+body:has(.modal-bg.show),
+body:has(.pdf-loading-overlay.show),
+body.modal-open {
+  overflow: hidden !important;
+}
+body:has(.modal-overlay.active) .header,
+body:has(.inline-edit-overlay.active) .header,
+body:has(.modal-bg.show) .header,
+body:has(.pdf-loading-overlay.show) .header,
+body.modal-open .header {
+  z-index: auto !important;
+  position: relative !important;
+}
+body:has(.modal-overlay.active) .main-content,
+body:has(.inline-edit-overlay.active) .main-content,
+body:has(.modal-bg.show) .main-content,
+body:has(.pdf-loading-overlay.show) .main-content,
+body.modal-open .main-content {
+  z-index: auto !important;
+}
+/* Defensive: ensure overlay panels themselves are not transformed by any
+   parent rule (transforms create new stacking contexts that re-trap them). */
+.modal-overlay, .inline-edit-overlay, .modal-bg, .pdf-loading-overlay {
+  transform: none !important;
+}
+
 /* ── 2. PROCUREMENT PACKAGES STICKY HEADER FIX ───────────────────────────────
    Goal: the "Procurement Packages" title + search + discipline filter + sort
    selector + the "N packages shown • Sorted by: X" count bar all stay pinned
@@ -10387,6 +10445,76 @@ window.switchTab = function(tab){
 // Initial render if schedule tab is visible
 setTimeout(function(){ if(document.getElementById('schedule') && document.getElementById('schedule').classList.contains('active')){ render(); } },100);
 
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GLOBAL OVERLAY-STATE OBSERVER
+// Toggles `body.modal-open` whenever ANY overlay/modal is visible, so the
+// CSS fallback selectors work in browsers without :has() support.
+// Watches the four known overlay archetypes plus inline-style display changes.
+// ═══════════════════════════════════════════════════════════════════════════
+(function(){
+  var OVERLAY_SELECTOR =
+    '.modal-overlay.active, .inline-edit-overlay.active, ' +
+    '.modal-bg.show, .pdf-loading-overlay.show';
+
+  function isOverlayShown(el){
+    if(!el) return false;
+    // Inline display:flex / display:block also counts (some flows set it directly).
+    var cs = el.style && el.style.display;
+    if(cs && cs !== 'none') return true;
+    // Otherwise rely on the activation classes.
+    return el.classList && (
+      el.classList.contains('active') ||
+      el.classList.contains('show')
+    );
+  }
+
+  function syncBodyModalClass(){
+    var any = !!document.querySelector(OVERLAY_SELECTOR);
+    if(!any){
+      // Also catch inline-display overlays without the activation class.
+      var candidates = document.querySelectorAll(
+        '.modal-overlay, .inline-edit-overlay, .modal-bg, .pdf-loading-overlay'
+      );
+      for(var i=0;i<candidates.length;i++){
+        if(isOverlayShown(candidates[i])){ any = true; break; }
+      }
+    }
+    document.body.classList.toggle('modal-open', any);
+  }
+
+  function init(){
+    syncBodyModalClass();
+    // Observe class & style changes anywhere under body — cheap because we
+    // only react to attribute mutations, not the whole subtree's child list.
+    var mo = new MutationObserver(function(mutations){
+      for(var i=0;i<mutations.length;i++){
+        var m = mutations[i];
+        if(m.type !== 'attributes') continue;
+        var t = m.target;
+        if(!t || !t.classList) continue;
+        if(t.classList.contains('modal-overlay') ||
+           t.classList.contains('inline-edit-overlay') ||
+           t.classList.contains('modal-bg') ||
+           t.classList.contains('pdf-loading-overlay')){
+          syncBodyModalClass();
+          return;
+        }
+      }
+    });
+    mo.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class','style'],
+      subtree: true
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
 
 </script>
