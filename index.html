@@ -2732,6 +2732,14 @@ html[data-theme="light"] #headerSyncBtn * {
                 <div>Cut-off : <b id="ds6-cutoff" style="color:#B8A878">—</b></div>
                 <div id="ds6-pkgCnt" style="margin-top:1px"><b style="color:#B8A878">—</b></div>
               </div>
+              <!-- Search bar -->
+              <div style="position:relative;flex-shrink:0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#B8A878" stroke-width="2.2" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:0.7"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+                <input id="ds6-searchQ" type="text" placeholder="Search package, vendor…"
+                  oninput="ds6_onSearch(this.value)"
+                  style="background:#0f1310;border:1px solid #B8A878;border-radius:4px;color:#fff;font-size:10px;padding:5px 8px 5px 26px;width:210px;outline:none;font-family:inherit;"
+                  onfocus="this.style.borderColor='#E8D888'" onblur="this.style.borderColor='#B8A878'">
+              </div>
               <button class="ds6-maxbtn" onclick="ds6_toggleMax()" id="ds6-maxbtn" title="Maximize">&#x26F6;</button>
               
               <button class="tb-btn" onclick="ds6_openPrint()" style="padding:4px 10px;border:1px solid #B8A878;background:transparent;color:#B8A878;font-size:9px;font-weight:700;cursor:pointer;border-radius:3px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap">⎙ Print</button>
@@ -9691,8 +9699,21 @@ function buildTimeHead(){
   inner.innerHTML = h;
 }
 
+var ds6SearchQ = '';
+function ds6_onSearch(v){ ds6SearchQ = v.trim().toLowerCase(); render(); }
+
 function filtered(){
   var list = PKG.slice();
+  if(ds6SearchQ){
+    list=list.filter(function(p){
+      return (p.name||'').toLowerCase().indexOf(ds6SearchQ)>=0
+          || (p.vendor||'').toLowerCase().indexOf(ds6SearchQ)>=0
+          || (p.discipline||'').toLowerCase().indexOf(ds6SearchQ)>=0
+          || (p.area||'').toLowerCase().indexOf(ds6SearchQ)>=0
+          || (p.incoterm||'').toLowerCase().indexOf(ds6SearchQ)>=0
+          || (p.location||'').toLowerCase().indexOf(ds6SearchQ)>=0;
+    });
+  }
   if(discF!=='all') list=list.filter(function(p){return p.discipline===discF;});
   var ALL_ST = new Set(['ongoing','onsite','delivered','shipping','mfg','eng_process','po_nyi','late']);
   var stAll = stF.size === 0 || stF.size === ALL_ST.size;
